@@ -2,25 +2,52 @@
 #include <fstream>
 #include <vector>
 #include <cstdint>
+#include <sstream>
 #include <cstring>
 #include <jpeglib.h>
+
+using namespace std;
 
 struct ImageInfo {
     int width;
     int height;
+    string sexo;
+    string nombre;
+    string apellido;
+    string fecha;
 };
 
 ImageInfo readBSONHeader(std::ifstream& file) {
-    int headerSize;
+    int headerSize = 0;
     file.read(reinterpret_cast<char*>(&headerSize), sizeof(int));
 
-    // Suponemos que la cabecera siempre es válida y contiene solo altura y ancho
-    ImageInfo imageInfo;
-    file.seekg(headerSize, std::ios::beg);
-    file.read(reinterpret_cast<char*>(&imageInfo.height), sizeof(int));
-    file.read(reinterpret_cast<char*>(&imageInfo.width), sizeof(int));
+    // Leer el JSON del encabezado
+    std::vector<char> buffer(headerSize + 1, '\0');
+    file.read(buffer.data(), headerSize);
 
-    return imageInfo;
+    // Parsear el JSON del encabezado para obtener la información de la imagen
+    int width = 0, height = 0;
+    std::string sexo, nombre, apellido, fecha;
+    std::istringstream headerStream(buffer.data());
+    headerStream.ignore(headerSize, ':');
+    /*
+    >> es un operador de extracción que lee datos de un flujo de entrada, como std::cin o un std::istringstream.
+    La extracción se detiene automáticamente hasta encontrar espacio en blanco, una nueva línea o el final del flujo.
+    */
+    headerStream >> height; // Leer el valor de la altura
+    headerStream.ignore(headerSize, ':'); // Ignorar hasta el segundo valor
+    headerStream >> width;
+    headerStream.ignore(headerSize, ':');
+    headerStream >> sexo;
+    headerStream.ignore(headerSize, ':');
+    headerStream >> nombre;
+    headerStream.ignore(headerSize, ':');
+    headerStream >> apellido;
+    headerStream.ignore(headerSize, ':');
+    headerStream >> fecha;
+
+    cout << "Ancho: " << width << " - Alto: " << height << " - Nombre: " << nombre << " - Apellido: " << apellido << " - Sexo: " << sexo << " - Fecha: " << fecha << endl;
+    return {width, height, sexo, nombre, apellido, fecha};
 }
 
 void readMexFile(const std::string& mexFileName, const std::string& jpgOutputFileName) {
